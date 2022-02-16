@@ -11,4 +11,6 @@ Johnny Cash, The american series versus his other work
 Metallica 2008 death magnetixc, 2011 beyond magnetic versus their other work
 
 Corpus Eno
-David Bowie 'Berlin Trilogy' versus Bowie's other work
+David Bowie 'Berlin Trilogy' versus Bowie's other work.
+
+Actually i will work with Eno
