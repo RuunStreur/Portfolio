@@ -1,25 +1,13 @@
 library(tidyverse)
 library(spotifyr)
-juditha <- get_track_audio_features(c("2M5b9YLAgFroqWzeaZf86e", "3DBKc4ioGnMQLlbGQcFDIO"))
-alla <- get_album_tracks("7oI0E3DdTbD85rhMg19GSU")
-gilberto <- get_artist_audio_features("gilberto gil")
-ecm <- get_playlist_audio_features("", "1zN4nK6oHMo2dei2WWPtSL")
-ecm %>%
-  summarise(
-    mean_speechiness = mean(speechiness),
-    mean_acousticness = mean(acousticness),
-    mean_liveness = mean(liveness),
-    sd_speechiness = sd(speechiness),
-    sd_acousticness = sd(acousticness),
-    sd_liveness = sd(liveness),
-    median_speechiness = median(speechiness),
-    median_acousticness = median(acousticness),
-    median_liveness = median(liveness),
-    mad_speechiness = mad(speechiness),
-    mad_acousticness = mad(acousticness),
-    mad_liveness = mad(liveness)
-  )
+
 bliepjes <- get_playlist_audio_features("", "4lWd8vOEKRp1oWPIUl7Ndw")
-https://open.spotify.com/playlist/4lWd8vOEKRp1oWPIUl7Ndw?si=dd97052fe5b84f26
-juditha
-ggplot(bliepjes, aes(x=energy, y=valence, color=mode))+geom_point()
+bliepjes
+balcony <- get_playlist_audio_features("", "1lGJfgn1POcdpewsw3YSNP")
+disco <- get_playlist_audio_features("", "37i9dQZF1DXbS8bPVXXR2B")
+bowie <- get_playlist_audio_features("", "109zncLRngc5ofl1DsCHcE")
+eno <- get_playlist_audio_features("", "6Rb67d7vVnq1FFAASwy5p5")
+eno %>%
+  filter(key==7)
+ggplot(eno, aes(x=loudness, y=energy, size=danceability))+geom_point()
+ggplot(disco, aes(x=loudness, y=energy, size=danceability, color=mode))+geom_point()
