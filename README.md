@@ -9,4 +9,8 @@ Corpus
 
 David Bowie 'Berlin Trilogy' versus other work by Bowie (Diamond Dogs, Hunky Dory, Let's Dance, Station to Station, The Rise and Fall of Ziggy Stardust and the Spiders from Mars).
 
+<<<<<<< HEAD
 Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'
+=======
+Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'
+>>>>>>> main
