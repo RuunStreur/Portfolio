@@ -18,23 +18,21 @@ eno2 <- eno%>%
   group_by(track.album.name)%>%
   summarize(meanDance=mean(danceability), meanVal = mean(valence))
 
+ggplot(eno2, aes(track.album.name,meanVal, color=track.album.name, fill=track.album.name)) + geom_col() + theme_light()
+  labs(
+  title = "The mean valence in Bowie's Berlin Trilogy",
+  x='Album',
+  y= 'Mean Valence',
+  caption = 'Ruun Streur 2022'
+  )
 
-ggplot(eno2, aes(track.album.name,meanVal, color=track.album.name, fill=track.album.name)) + geom_col() 
-+labs(title="The mean valence in Bowie's Berlin Trilogy")
-
-ggplot(bowie2, aes(track.album.name,meanVal, color=track.album.name, fill=track.album.name)) + geom_col()
-
-ggplot(bowie2, aes(x = meanDance, y = track.album.name)) +
-  geom_point(size = 4) +
-  geom_segment(aes(xend = 30, yend = track.album.name), size = 2) +
-  geom_text(aes(label = round(meanDance,1)), color = "white", size = 1.5) +
-  scale_x_continuous("", expand = c(0,0), limits = c(30,90), position = "top")
-
-ggarrange(eno2, bowie2 + rremove("x.text"), 
-          labels = c("A", "B", "C"),
-          ncol = 2, nrow = 2)
-
-multiplot(bowie2, eno2)
+ggplot(bowie2, aes(track.album.name,meanVal, color=track.album.name, fill=track.album.name)) + geom_col()+
+  labs(
+    title = "The mean valence in five of Bowie's Albums",
+    x='Album',
+    y= 'Mean Valence',
+    caption = 'Ruun Streur 2022'
+  )
 
 
 
