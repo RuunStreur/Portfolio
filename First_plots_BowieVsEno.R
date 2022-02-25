@@ -16,7 +16,7 @@ bowie2 <- bowie%>%
 
 eno2 <- eno%>%
   group_by(track.album.name)%>%
-  summarize(meanDance=mean(danceability), meanVal = mean(valence))
+  summarize(meanDance=mean(danceability), meanVal = mean(valenc)
 
 ggplot(eno2, aes(track.album.name,meanVal, color=track.album.name, fill=track.album.name)) + geom_col() + theme_light()
   labs(

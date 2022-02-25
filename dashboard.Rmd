@@ -1,0 +1,41 @@
+---
+title: "Ruun's Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+---
+
+Overview
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Chart A
+
+
+
+Column
+-----------------------------------------------------------------------
+
+### Chart B
+
+
+
+### Chart C
+
+
+
+Details {data-navmenu=More}
+=====================================
+
+### Chart AA
+
+
+Data {data-navmenu=More}
+=====================================
+
+### Chart BB
+
+
+
