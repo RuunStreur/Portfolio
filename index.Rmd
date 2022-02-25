@@ -161,6 +161,11 @@ David Bowie's 'Berlin Trilogy' versus other work by Bowie ('Diamond Dogs', 'Hunk
 
 Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'</font></b>
 
+```{r}
+tab <- knitr::kable(bowie[1:5,6:15], format="markdown",caption = "A couple of features for a couple of David Bowie's songs")
+tab
+```
+
 ### Did Bowie change anything else when switching languages for Heroes? A dynamic time warping analysis.
 ```{r}
 
