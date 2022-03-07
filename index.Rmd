@@ -27,7 +27,7 @@ library(scales)
 
 
 ```{r}
-# Loading Playlists
+# Loading Playlists and songs
 bowie <- get_playlist_audio_features("", "109zncLRngc5ofl1DsCHcE")
 bowie_eno <- get_playlist_audio_features("", "6Rb67d7vVnq1FFAASwy5p5")
 TH <- get_playlist_audio_features("", "1K27mtJcCFQw4IxJLZlmNQ")
@@ -40,6 +40,16 @@ TH_extracol <- TH %>% add_column(is_eno = 0)
 TH_eno_extracol <- TH_eno %>% add_column(is_eno = 1)
 bowie_all <- bind_rows(bowie_extracol, bowie_eno_extracol)
 TH_all <- bind_rows(TH_extracol, TH_eno_extracol)
+
+cap <- get_tidy_audio_analysis("0yhwdmbgkKdE1plV8xWdrd") 
+heroes <- get_tidy_audio_analysis("5Ci3b8pfpLA9Zk17qGXBCF")
+bop <- get_tidy_audio_analysis("4eBCTzBsSjYgrLH5clQf2x")
+sans <- get_tidy_audio_analysis("58uyNQ2aC329uLMZpU9Ptz")
+fela <- get_tidy_audio_analysis("0Q4O6v2akT3RfkNxCt522f")
+nf <- get_tidy_audio_analysis("2pmytOddxLVaASHQqTH9LO")
+aypt <- get_tidy_audio_analysis("7Js4OF5MUb2bqJe09g4uQE")
+ata <- get_tidy_audio_analysis("37CRPk0L5ZpfPeePEPwE0t")
+
 ```
 
 
@@ -146,6 +156,167 @@ bowie_lollipop <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDanc
 ```
 -----------------------------------------------------------------------
 
+### "Eno trance": does Eno's love for repetition and creating an ambiance in his songs come up in his work with Bowie and Talking Heads?
+```{r}
+
+song0 <-
+  nf %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+
+song1 <-
+  ata %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+
+song2 <-
+  fela %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+song3 <-
+  heroes %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+#ceptos
+cepto0 <- song0 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "TH without Eno: New Feeling 1977",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+cepto1 <- song1 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Bowie without Eno: Ashes to Ashes 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+cepto2 <- song2 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Talking Heads with Eno: Fela's Riff 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+cepto3 <- song3 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Bowie with Eno: Heroes 1977", x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+```
+
+```{r cepts, fig.width=30, fig.height=20}
+grid.arrange(cepto0, cepto1, cepto2, cepto3, ncol=2)
+```
+
+***
+Eno, as being one of the, if not the most influential pioneer of so called 'ambient' music, often tries to encapsulate the listener in a musical environment. With the release of 'Ambient 1: Music for airports', released in '78, the genre Ambient was basically formed and cemented. One of the key aspects of ambient music is that the songs do not follow the general verse and chorus structure and are more of a whole uniform piece where one part flows into the other without the listener noticing. By flowing from one part to another a breathing ambiance is created. With Eno so orbed by this genre during the late 70's, it is quite probable we can link some of his work with Bowie and Talking heads to Ambient music.
+
+Clarification on the plots: First column: Talking Heads, second column: Bowie, first row: without Eno, second row with Eno.
+
+The top two cepstograms show the timbre features in songs that make use of clear sections, we clearly see a pre-chorus in 'New Feeling at the c01 row around the 60 second mark. In 'Ashes to Ashes' we recognise different patterns too and see clear sections in the c01 and c02 rows.
+Hewever, when looking at the bottom row we see a different pattern, namely one ('Heroes') or two ('Fela's Riff') thick stripes. These songs are very much like an ambient song in the sense that they are a whole piece in which no clear sections can be found. Heroes builds off of a repeating guitar backing track on which Bowie's vocal work creates the dynamics of the song, while 'Fela's Riff' is an instrumental song in which repeating and mesmerizing polyrythm's bring you into a trance, very much like Eno's ambient albums. These repeating patterns are found throughout the whole 'Remain in Light' album by Talking Heads.
+
+I have not used the last three tracks on Bowie's 'Heroes' album, 'Sense of Doubt', 'Moss Garden' and 'Neuköln' because they are clearly Ambient songs on which Eno left his mark. The point of interest is to find aspects of ambient music in non-ambient music songs. 
+
 ### The fingerprints of Brian Eno in David Bowie's and The Talking Heads's work; an introduction to the corpus.
 
 
@@ -160,11 +331,6 @@ Corpus
 David Bowie's 'Berlin Trilogy' versus other work by Bowie ('Diamond Dogs', 'Hunky Dory', 'Let's Dance', 'Station to Station').
 
 Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'</font></b>
-
-```{r}
-tab <- knitr::kable(bowie[1:5,6:15], format="markdown",caption = "A couple of features for a couple of David Bowie's songs")
-tab
-```
 
 ### Did Bowie change anything else when switching languages for Heroes? A dynamic time warping analysis.
 ```{r}
