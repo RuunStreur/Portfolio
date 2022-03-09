@@ -222,7 +222,7 @@ divbar2 <- ggplot(TH_all, aes(x=track.name, y=duration_z)) +
 ```
 -----------------------------------------------------------------------
 
-### Chordogram of crosseyed and painless
+### "Eno trance" 2: Another way of showing the repetition in Eno's work: a chordogram of crosseyed and painless
 
 
 ```{r}
@@ -347,7 +347,7 @@ This is a chordogram of the song 'Crosseyed and Painless' by Talking Heads. The 
 -----------------------------------------------------------------------
 
 
-### "Eno trance": does Eno's love for repetition and creating an ambiance in his songs come up in his work with Bowie and Talking Heads?
+### "Eno trance" 1: does Eno's love for repetition and creating an ambiance in his songs come up in his work with Bowie and Talking Heads?
 
 
 ```{r}
