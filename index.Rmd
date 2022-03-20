@@ -222,6 +222,23 @@ divbar2 <- ggplot(TH_all, aes(x=track.name, y=duration_z)) +
 ```
 -----------------------------------------------------------------------
 
+### Tempogram
+
+```{r}
+
+cap %>%
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>%
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
+```
+
+***
+Here we have a tempogram of Talking Head's Crosseyed and painless. As we clearly sea the song stays at a regular BPM throughout. This goes hand in hand with the fact that the song builds forth on repetition and trance-like polyrhythms. 
+
+
 ### "Eno trance" 2: Another way of showing the repetition in Eno's work: a chordogram of crosseyed and painless
 
 

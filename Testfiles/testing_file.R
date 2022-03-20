@@ -347,3 +347,80 @@ twenty_five %>%
   scale_fill_viridis_c(guide = "none") +
   theme_minimal() +
   labs(x = "Time (s)", y = "")
+
+
+#################################################################
+
+pata_pata <-
+  get_tidy_audio_analysis("3uy90vHHATPjtdilshDQDt") %>%
+  select(segments) %>%
+  unnest(segments)
+
+cap <- get_tidy_audio_analysis("0yhwdmbgkKdE1plV8xWdrd") 
+heroes <- get_tidy_audio_analysis("5Ci3b8pfpLA9Zk17qGXBCF")
+bop <- get_tidy_audio_analysis("4eBCTzBsSjYgrLH5clQf2x")
+sans <- get_tidy_audio_analysis("58uyNQ2aC329uLMZpU9Ptz")
+fela <- get_tidy_audio_analysis("0Q4O6v2akT3RfkNxCt522f")
+place <- get_tidy_audio_analysis("6aBUnkXuCEQQHAlTokv9or")
+
+psycho <- get_tidy_audio_analysis("5cE2nMYDgYj9gqG4KLafKy")
+nf <- get_tidy_audio_analysis("2pmytOddxLVaASHQqTH9LO")
+aypt <- get_tidy_audio_analysis("7Js4OF5MUb2bqJe09g4uQE")
+hill <- get_tidy_audio_analysis("1raM9iX3HPhZvINoYCSWc9")
+ata <- get_tidy_audio_analysis("37CRPk0L5ZpfPeePEPwE0t")
+test <- get_tidy_audio_analysis("35GYDmixAiE0d36qSPqfuO")
+
+song <- cap %>% select(segments) %>% unnest(segments)
+
+song %>%
+  mutate(loudness_max_time = start + loudness_max_time) %>%
+  arrange(loudness_max_time) %>%
+  mutate(delta_loudness = loudness_max - lag(loudness_max)) %>%
+  ggplot(aes(x = loudness_max_time, y = pmax(0, delta_loudness))) +
+  geom_line() +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(x = "Time (s)", y = "Novelty")
+
+song %>%
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) %>%
+  arrange(start) %>%
+  mutate(pitches = map2(pitches, lag(pitches), `-`)) %>%
+  slice(-1) %>% 
+  compmus_gather_chroma() %>% 
+  group_by(start, duration) %>% 
+  summarise(novelty = sum(log1p(pmax(value, 0)))) %>% 
+  ggplot(aes(x = start + duration / 2, y = novelty)) +
+  geom_line() +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(x = "Time (s)", y = "Novelty")
+
+song %>%
+  arrange(start) %>%
+  mutate(timbre = map2(timbre, lag(timbre), `-`)) %>%
+  slice(-1) %>%
+  compmus_gather_timbre() %>%
+  group_by(start, duration) %>% 
+  summarise(novelty = sum(log1p(pmax(value, 0)))) %>% 
+  ggplot(aes(x = start + duration / 2, y = novelty)) +
+  geom_line() +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(x = "Time (s)", y = "Novelty")
+graveola <- get_tidy_audio_analysis("6LgJvl0Xdtc73RJ1mmpotq")
+cap %>%
+  tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) %>%
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
+
+graveola %>%
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>%
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
