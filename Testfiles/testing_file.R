@@ -408,7 +408,7 @@ song %>%
   xlim(0, 60) +
   theme_minimal() +
   labs(x = "Time (s)", y = "Novelty")
-graveola <- get_tidy_audio_analysis("6LgJvl0Xdtc73RJ1mmpotq")
+
 cap %>%
   tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) %>%
   ggplot(aes(x = time, y = bpm, fill = power)) +
