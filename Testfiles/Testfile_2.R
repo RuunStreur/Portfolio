@@ -74,28 +74,29 @@ bowie_dend_juice <-
   recipe(
     track.name ~
       danceability +
+      acousticness +
       valence +
       energy,
     data = bowie_dend
   ) %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors()) %>% 
-  # step_range(all_predictors()) %>% 
-  prep(th_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
+  step_range(all_predictors()) %>% 
+  prep(bowie_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
   juice() %>%
   column_to_rownames("track.name")
 
 th_dend_juice <-
   recipe(
     track.name ~
-      danceability +
       valence +
+      acousticness +
       energy,
     data = th_dend
   ) %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors()) %>% 
-  # step_range(all_predictors()) %>% 
+  step_range(all_predictors()) %>% 
   prep(th_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
   juice() %>%
   column_to_rownames("track.name")
@@ -118,9 +119,142 @@ dend1 <- th_dend_dist %>%
 #```
 
 #```{r}
-grid.arrange(dend0, dend1, ncol = 2)
+dend0
+dend1
 #```
-
-***
+heatmaply(
+  bowie_dend_juice,
+  hclustfun = hclust,
+  hclust_method = "average",  # Change for single, average, or complete linkage.
+  dist_method = "euclidean"
+)
+#***
   
-  A clustering analysis of all Bowies's and Talking Heads's songs, produced and not pruduced by Eno, clustered by energy, valence and danceability.
+#A clustering analysis of all Bowies's and Talking Heads's songs, produced and not pruduced by Eno, clustered by energy, valence and danceability.
+
+song1 <-
+  ata %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+
+song2 <-
+  fela %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+song3 <-
+  heroes %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
+  )
+
+
+
+
+#ceptos
+cepto0 <- song0 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "TH without Eno: New Feeling 1977",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic() + theme(axis.text = element_text(size=20), plot.title = element_text(size=30))
+
+cepto1 <- song1 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Bowie without Eno: Ashes to Ashes 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+cepto2 <- song2 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Talking Heads with Eno: Fela's Riff 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+cepto3 <- song3 %>%
+  compmus_gather_timbre() %>%
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Bowie with Eno: Heroes 1977", x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+
+grid.arrange(cepto0, cepto1, cepto2, cepto3, ncol=2)

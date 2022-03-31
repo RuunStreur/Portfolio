@@ -44,6 +44,8 @@ TH_extracol <- TH %>% add_column(is_eno = 0)
 TH_eno_extracol <- TH_eno %>% add_column(is_eno = 1)
 bowie_all <- bind_rows(bowie_extracol, bowie_eno_extracol)
 TH_all <- bind_rows(TH_extracol, TH_eno_extracol)
+bowie_clean <- cbind(bowie_all[6:7], bowie_all[9], bowie_all[10:16], bowie_all['is_eno'])
+TH_clean <- cbind(TH_all[6:7], TH_all[9], TH_all[10:16], TH_all['is_eno'])
 
 cap <- get_tidy_audio_analysis("0yhwdmbgkKdE1plV8xWdrd") 
 heroes <- get_tidy_audio_analysis("5Ci3b8pfpLA9Zk17qGXBCF")
@@ -54,32 +56,6 @@ nf <- get_tidy_audio_analysis("2pmytOddxLVaASHQqTH9LO")
 aypt <- get_tidy_audio_analysis("7Js4OF5MUb2bqJe09g4uQE")
 ata <- get_tidy_audio_analysis("37CRPk0L5ZpfPeePEPwE0t")
 
-
-song0 <-
-  nf %>%
-  compmus_align(bars, segments) %>%
-  select(bars) %>%
-  unnest(bars) %>%
-  mutate(
-    pitches =
-      map(segments,
-          compmus_summarise, pitches,
-          method = "rms", norm = "euclidean"
-      )
-  ) %>%
-  mutate(
-    timbre =
-      map(segments,
-          compmus_summarise, timbre,
-          method = "rms", norm = "euclidean"
-      )
-  )
-
-```
-
-
-
-```{r} 
 # Plotting
 limy_min <- 0
 limy_max <- 385000
@@ -109,6 +85,128 @@ talking_enoSum <- TH_eno%>%
                         )
 
 ############################################################################################################################################################
+
+#dendos
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit %>% 
+    collect_predictions() %>% 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
+
+get_pr <- function(fit) {
+  fit %>% 
+    conf_mat_resampled() %>% 
+    group_by(Prediction) %>% mutate(precision = Freq / sum(Freq)) %>% 
+    group_by(Truth) %>% mutate(recall = Freq / sum(Freq)) %>% 
+    ungroup() %>% filter(Prediction == Truth) %>% 
+    select(class = Prediction, precision, recall)
+}  
+
+bowie_dend <-
+  bowie_all %>%
+  add_audio_analysis() %>%
+  mutate(
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean"
+      )
+  ) %>%
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) %>%
+  mutate_at(vars(pitches, timbre), map, bind_rows) %>%
+  unnest(cols = c(pitches, timbre))
+
+
+bowie_dend_juice <-
+  recipe(
+    track.name ~
+      instrumentalness + 
+      loudness +
+      energy,
+    data = bowie_dend
+  ) %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors()) %>% 
+  # step_range(all_predictors()) %>% 
+  prep(bowie_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
+  juice() %>%
+  column_to_rownames("track.name")
+
+
+bowie_dend_dist <- dist(bowie_dend_juice, method = "euclidean")
+
+dend0 <- bowie_dend_dist %>% 
+  hclust(method = "complete") %>% # Try single, average, and complete.
+  dendro_data() %>%
+  ggdendrogram() + labs(title = "Dendogram of Bowie's corpus") 
+  
+th_dend <-
+  TH_all %>%
+  add_audio_analysis() %>%
+  mutate(
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean"
+      )
+  ) %>%
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) %>%
+  mutate_at(vars(pitches, timbre), map, bind_rows) %>%
+  unnest(cols = c(pitches, timbre))
+
+th_dend_juice <-
+  recipe(
+    track.name ~
+      instrumentalness +
+      liveness +
+      energy,
+    data = th_dend
+  ) %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors()) %>% 
+  # step_range(all_predictors()) %>% 
+  prep(th_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
+  juice() %>%
+  column_to_rownames("track.name") 
+
+th_dend_dist <- dist(th_dend_juice, method = "euclidean")
+
+TH_dend <- th_dend_dist %>% 
+  hclust(method = "complete") %>% # Try single, average, and complete.
+  dendro_data() %>%
+  ggdendrogram() + labs(title = "Dendogram of the Talking Heads corpus")
+
+bowie_heat <- heatmaply(
+  bowie_dend_juice,
+  hclustfun = hclust,
+  hclust_method = "complete",  # Change for single, average, or complete linkage.
+  dist_method = "euclidean",   showticklabels = c(TRUE, FALSE)
+) 
+
+TH_heat <- heatmaply(
+  th_dend_juice,
+  hclustfun = hclust,
+  hclust_method = "complete",  # Change for single, average, or complete linkage.
+  dist_method = "euclidean",   showticklabels = c(TRUE, FALSE)
+)
+
+
+###
 
 bowieplot <- ggplot(bowieSum, aes(track.album.name, meanDur, color=track.album.name, fill=track.album.name)) + geom_col() + ylim(limy_min, limy_max) + 
   theme_light() +
@@ -149,124 +247,76 @@ talking_enoplot <- ggplot(talking_enoSum, aes(track.album.name, meanDur, color=t
     x='Album',
     y= 'Duration in ms'
   )
-```
 
-```{r}
+# Correlation plots
 
-bowie_discSum <- bowie_disc%>%
-  group_by(track.album.name)%>%
-  summarize(meanDance=mean(danceability), meanVal = mean(valence))
+r_bowie <- cor(bowie_clean)
+cor.test.p <- function(x){
+  FUN <- function(x, y) cor.test(x, y)[["p.value"]]
+  z <- outer(
+    colnames(x), 
+    colnames(x), 
+    Vectorize(function(i,j) FUN(x[,i], x[,j]))
+  )
+  dimnames(z) <- list(colnames(x), colnames(x))
+  z
+}
+p_bowie <- cor.test.p(bowie_clean)
 
-bowie_discplot <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), meanDance, color=track.album.name, fill=track.album.name)) + geom_col() + 
-  theme_light() +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank()) +
-  labs(
-    title = "The mean danceability in all of Bowie's albums",
-    x='Album',
-    y= 'Mean danceability'
+bowiemap <- heatmaply_cor(
+  r_bowie,
+  main = "The correlations of features", 
+  node_type = "scatter",
+  point_size_mat = -log10(p_bowie), 
+  point_size_name = "-log10(p-value)",
+  label_names = c("x", "y", "Correlation")
+)
+
+r_TH <- cor(TH_clean)
+cor.test.p <- function(x){
+  FUN <- function(x, y) cor.test(x, y)[["p.value"]]
+  z <- outer(
+    colnames(x), 
+    colnames(x), 
+    Vectorize(function(i,j) FUN(x[,i], x[,j]))
+  )
+  dimnames(z) <- list(colnames(x), colnames(x))
+  z
+}
+p_TH <- cor.test.p(bowie_clean)
+
+THmap <- heatmaply_cor(
+  r_TH,
+  main = "The correlations of features", 
+  node_type = "scatter",
+  point_size_mat = -log10(p_TH), 
+  point_size_name = "-log10(p-value)",
+  label_names = c("x", "y", "Correlation")
+)
+
+# Preparing Cepstogram data
+
+song0 <-
+  nf %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"
+      )
   )
 
-bowie_lollipop <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), y=meanDance), fill = track.album.name) + theme_light() +
-  geom_point(size=3, aes(color = track.album.name)) + 
-  geom_segment(aes(x=track.album.name, 
-                   xend=track.album.name, 
-                   y=0, 
-                   yend=meanDance
-                   )) + 
-  xlab('Albums') + 
-  ylab('Average Danceability') +
-  labs(title="Bowie's biggest swingers", 
-       subtitle="Average Danceability for every bowie album", 
-       caption="source: Spotify API") + 
-  theme( 
-        axis.text.x = element_text(angle=80, vjust=0.5, size=6),
-        axis.ticks.x = element_blank()) +
-  xlab('Albums') + ylab('Mean Danceability')
-  
-############
 
-bowie_all$duration_z <- round((bowie_all$track.duration_ms - mean(bowie_all$track.duration_ms))/sd(bowie_all$track.duration_ms), 2) 
-bowie_all$is_eno2 <- ifelse(bowie_all$is_eno < 1, "No", "Yes")  # above / below avg flag
-bowie_all <- bowie_all[order(bowie_all$duration_z), ]
-bowie_all$track.name <- factor(bowie_all$track.name, levels = bowie_all$track.name)  # convert to factor to retain sorted order in plot.
-
-divbar1 <- ggplot(bowie_all, aes(x=track.name, y=duration_z)) + 
-  geom_bar(stat='identity', aes(fill=is_eno2), width=.5)  +
-  scale_fill_manual(name="Produced by Eno", 
-                    labels = c("Produced by Eno", "Not Produced by Eno"), 
-                    values = c("Yes"="#00ba38", "No"="#f8766d")) + 
-  labs(subtitle="Normalised duration of Bowie's songs", 
-       title= "Bowie's song durations") +
-  theme( 
-    axis.text.y = element_text(vjust=0.2, size=5),
-    axis.ticks.x = element_blank()) +
-  xlab('Song') + ylab('Normalized durations') +
-  coord_flip()
-
-TH_all$duration_z <- round((TH_all$track.duration_ms - mean(TH_all$track.duration_ms))/sd(TH_all$track.duration_ms), 2) 
-TH_all$is_eno2 <- ifelse(TH_all$is_eno < 1, "No", "Yes")  # above / below avg flag
-TH_all <- TH_all[order(TH_all$duration_z), ]
-TH_all$track.name <- factor(TH_all$track.name, levels = TH_all$track.name)  # convert to factor to retain sorted order in plot.
-
-divbar2 <- ggplot(TH_all, aes(x=track.name, y=duration_z)) + 
-  geom_bar(stat='identity', aes(fill=is_eno2), width=.5)  +
-  scale_fill_manual(name="Produced by Eno", 
-                    labels = c("Produced by Eno", "Not Produced by Eno"), 
-                    values = c("Yes"="#00ba38", "No"="#f8766d")) + 
-  labs(subtitle="Normalised duration of TH's songs", 
-       title= "Talking Heads's song durations") + 
-  theme( 
-    axis.text.y = element_text(vjust=0.2, size=5),
-    axis.ticks.x = element_blank()) +
-  xlab('Song') + ylab('Normalized durations') +
-  coord_flip()
-
-```
------------------------------------------------------------------------
-
-
-### The fingerprints of Brian Eno in David Bowie's and The Talking Heads's work; an introduction to the corpus.
-
-
-<b><font size="8em"> Introduction </font></b>
-<font size="4em"> 
-
-
-When thinking of a popular band or record, we mostly think about the charismatic lead singer, virtuous guitarist or energetic drummer. Overlooked however is often the role of the producer of the band. It is not without reason that George Martin is often called 'the fifth Beatle'. How much influence do producers have on a bands sound? How much does a record producers put their own style into the records they produce? Of course this will vary a lot from producer to producer, but for this Portfolio the work of one producer in particular will be highlighted: Brian Eno. Eno is regarded as one of the best producers in the history of record producers and has produced for names as Talking Heads, Roxy Music and U2. With fellow producer Tony Visconte he helped David Bowie create his famed 'Berlin Trilogy', existing of 'Low', 'Heroes' and 'Lodger', which this Portfolio will analyse and investigate. Next to Bowie's Berlin Trilogy we will look at another trilogy Eno has produced: Talking Heads's 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light'. Can we find notable differences within Eno and non-Eno produced records? Are there correlations between his work with Bowie and Talking Heads?
-
-</b>Corpus</b>
-
-David Bowie's 'Berlin Trilogy' versus other work by Bowie ('Diamond Dogs', 'Hunky Dory', 'Let's Dance', 'Station to Station'). \n
-Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'</font>
-
-
-
-
-```{r}
-tafel <- bowie[0:10, 6:16]
-kbl(tafel, caption = "Some of the features of some of of Bowie's songs") %>% kable_styling(bootstrap_options = c("striped", "hover"))
-
-```
-
-***
-Bowie
-<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/109zncLRngc5ofl1DsCHcE?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-Berlin Trilogy
-<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/6Rb67d7vVnq1FFAASwy5p5?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-Talking Heads
-<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/4XrUACEdnQh8WfygAgSKxd?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-Talking Heads with Eno
-<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1K27mtJcCFQw4IxJLZlmNQ?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-
-### "Eno trance" 1: does Eno's love for repetition and creating an ambiance in his songs come up in his work with Bowie and Talking Heads?
-
-
-```{r}
 song1 <-
   ata %>%
   compmus_align(bars, segments) %>%
@@ -328,11 +378,7 @@ song3 <-
       )
   )
 
-
-```
-```{r}
-
-#ceptos
+# Building Cepstograms
 cepto0 <- song0 %>%
   compmus_gather_timbre() %>%
   ggplot(
@@ -344,9 +390,9 @@ cepto0 <- song0 %>%
     )
   ) +
   geom_tile() +
-  labs(title = "TH without Eno: New Feeling 1977",x = "Time (s)", y = NULL, fill = "Magnitude") +
+  labs(title = "Talking Heads without Eno: New Feeling 1977",x = "Time (s)", y = NULL, fill = "Magnitude") +
   scale_fill_viridis_c() +                              
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size=20), plot.title = element_text(size=30))
 
 cepto1 <- song1 %>%
   compmus_gather_timbre() %>%
@@ -361,7 +407,7 @@ cepto1 <- song1 %>%
   geom_tile() +
   labs(title = "Bowie without Eno: Ashes to Ashes 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
   scale_fill_viridis_c() +                              
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size=20), plot.title = element_text(size=30))
 
 cepto2 <- song2 %>%
   compmus_gather_timbre() %>%
@@ -376,7 +422,7 @@ cepto2 <- song2 %>%
   geom_tile() +
   labs(title = "Talking Heads with Eno: Fela's Riff 1980",x = "Time (s)", y = NULL, fill = "Magnitude") +
   scale_fill_viridis_c() +                              
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size=20), plot.title = element_text(size=30))
 
 cepto3 <- song3 %>%
   compmus_gather_timbre() %>%
@@ -391,235 +437,82 @@ cepto3 <- song3 %>%
   geom_tile() +
   labs(title = "Bowie with Eno: Heroes 1977", x = "Time (s)", y = NULL, fill = "Magnitude") +
   scale_fill_viridis_c() +                              
-  theme_classic()
-```
+  theme_classic()+ theme(axis.text = element_text(size=20), plot.title = element_text(size=30))
 
-```{r cepts, fig.width=30, fig.height=20}
-grid.arrange(cepto0, cepto1, cepto2, cepto3, ncol=2)
-```
+# Lollipop chart of danceability
 
-***
-Eno, as being one of the, if not the most influential pioneer of so called 'ambient' music, often tries to encapsulate the listener in a musical environment. With the release of 'Ambient 1: Music for airports', released in '78, the genre Ambient was basically formed and cemented. One of the key aspects of ambient music is that the songs do not follow the general verse and chorus structure and are more of a whole uniform piece where one part flows into the other without the listener noticing. By flowing from one part to another a breathing ambiance is created. With Eno so orbed by this genre during the late 70's, it is quite probable we can link some of his work with Bowie and Talking heads to Ambient music.
+bowie_discSum <- bowie_disc%>%
+  group_by(track.album.name)%>%
+  summarize(meanDance=mean(danceability), meanVal = mean(valence))
 
-Clarification on the plots: First column: Talking Heads, second column: Bowie, first row: without Eno, second row with Eno.
-
-The top two cepstograms show the timbre features in songs that make use of clear sections, we clearly see a pre-chorus in 'New Feeling at the c01 row around the 60 second mark. In 'Ashes to Ashes' we recognise different patterns too and see clear sections in the c01 and c02 rows.
-Hewever, when looking at the bottom row we see a different pattern, namely one ('Heroes') or two ('Fela's Riff') thick stripes. These songs are very much like an ambient song in the sense that they are a whole piece in which no clear sections can be found. Heroes builds off of a repeating guitar backing track on which Bowie's vocal work creates the dynamics of the song, while 'Fela's Riff' is an instrumental song in which repeating and mesmerizing polyrythm's bring you into a trance, very much like Eno's ambient albums. These repeating patterns are found throughout the whole 'Remain in Light' album by Talking Heads.
-
-I have not used the last three tracks on Bowie's 'Heroes' album, 'Sense of Doubt', 'Moss Garden' and 'Neuköln' because they are clearly Ambient songs on which Eno left his mark. The point of interest is to find aspects of ambient music in non-ambient music songs. 
-
-
-### "Eno trance" 2: Another way of showing the repetition in Eno's work: a chordogram and tempogram of crosseyed and painless
-
-
-```{r}
-circshift <- function(v, n) {
-  if (n == 0) v else c(tail(v, n), head(v, -n))
-}
-
-#      C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
-major_chord <-
-  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    0,    0)
-minor_chord <-
-  c(   1,    0,    0,    1,    0,    0,    0,    1,    0,    0,    0,    0)
-seventh_chord <-
-  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    1,    0)
-
-major_key <-
-  c(6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
-minor_key <-
-  c(6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
-
-chord_templates <-
-  tribble(
-    ~name, ~template,
-    "Gb:7", circshift(seventh_chord, 6),
-    "Gb:maj", circshift(major_chord, 6),
-    "Bb:min", circshift(minor_chord, 10),
-    "Db:maj", circshift(major_chord, 1),
-    "F:min", circshift(minor_chord, 5),
-    "Ab:7", circshift(seventh_chord, 8),
-    "Ab:maj", circshift(major_chord, 8),
-    "C:min", circshift(minor_chord, 0),
-    "Eb:7", circshift(seventh_chord, 3),
-    "Eb:maj", circshift(major_chord, 3),
-    "G:min", circshift(minor_chord, 7),
-    "Bb:7", circshift(seventh_chord, 10),
-    "Bb:maj", circshift(major_chord, 10),
-    "D:min", circshift(minor_chord, 2),
-    "F:7", circshift(seventh_chord, 5),
-    "F:maj", circshift(major_chord, 5),
-    "A:min", circshift(minor_chord, 9),
-    "C:7", circshift(seventh_chord, 0),
-    "C:maj", circshift(major_chord, 0),
-    "E:min", circshift(minor_chord, 4),
-    "G:7", circshift(seventh_chord, 7),
-    "G:maj", circshift(major_chord, 7),
-    "B:min", circshift(minor_chord, 11),
-    "D:7", circshift(seventh_chord, 2),
-    "D:maj", circshift(major_chord, 2),
-    "F#:min", circshift(minor_chord, 6),
-    "A:7", circshift(seventh_chord, 9),
-    "A:maj", circshift(major_chord, 9),
-    "C#:min", circshift(minor_chord, 1),
-    "E:7", circshift(seventh_chord, 4),
-    "E:maj", circshift(major_chord, 4),
-    "G#:min", circshift(minor_chord, 8),
-    "B:7", circshift(seventh_chord, 11),
-    "B:maj", circshift(major_chord, 11),
-    "D#:min", circshift(minor_chord, 3)
+bowie_discplot <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), meanDance, color=track.album.name, fill=track.album.name)) + geom_col() + 
+  theme_light() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(
+    title = "The mean danceability in all of Bowie's albums",
+    x='Album',
+    y= 'Mean danceability'
   )
 
-key_templates <-
-  tribble(
-    ~name, ~template,
-    "Gb:maj", circshift(major_key, 6),
-    "Bb:min", circshift(minor_key, 10),
-    "Db:maj", circshift(major_key, 1),
-    "F:min", circshift(minor_key, 5),
-    "Ab:maj", circshift(major_key, 8),
-    "C:min", circshift(minor_key, 0),
-    "Eb:maj", circshift(major_key, 3),
-    "G:min", circshift(minor_key, 7),
-    "Bb:maj", circshift(major_key, 10),
-    "D:min", circshift(minor_key, 2),
-    "F:maj", circshift(major_key, 5),
-    "A:min", circshift(minor_key, 9),
-    "C:maj", circshift(major_key, 0),
-    "E:min", circshift(minor_key, 4),
-    "G:maj", circshift(major_key, 7),
-    "B:min", circshift(minor_key, 11),
-    "D:maj", circshift(major_key, 2),
-    "F#:min", circshift(minor_key, 6),
-    "A:maj", circshift(major_key, 9),
-    "C#:min", circshift(minor_key, 1),
-    "E:maj", circshift(major_key, 4),
-    "G#:min", circshift(minor_key, 8),
-    "B:maj", circshift(major_key, 11),
-    "D#:min", circshift(minor_key, 3)
-  )
+bowie_lollipop <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), y=meanDance), fill = track.album.name) + theme_light() +
+  geom_point(size=3, aes(color = track.album.name)) + 
+  geom_segment(aes(x=track.album.name, 
+                   xend=track.album.name, 
+                   y=0, 
+                   yend=meanDance
+                   )) + 
+  xlab('Albums') + 
+  ylab('Average Danceability') +
+  labs(title="Bowie's biggest swingers", 
+       subtitle="Average Danceability for every bowie album", 
+       caption="source: Spotify API") + 
+  theme( 
+        axis.text.x = element_text(angle=80, vjust=0.5, size=6),
+        axis.ticks.x = element_blank()) +
+  xlab('Albums') + ylab('Mean Danceability')
+  
+############
 
-crosseyed <-
-  get_tidy_audio_analysis("0yhwdmbgkKdE1plV8xWdrd") %>%
-  compmus_align(bars, segments) %>%
-  select(bars) %>%
-  unnest(bars) %>%
-  mutate(
-    pitches =
-      map(segments,
-          compmus_summarise, pitches,
-          method = "mean", norm = "manhattan"
-      )
-  )
+# Plots averaging features with and without Eno
 
-cap0 <- crosseyed %>% 
-  compmus_match_pitch_template(
-    key_templates,         # Change to chord_templates if descired
-    method = "euclidean",  # Try different distance metrics
-    norm = "manhattan"     # Try different norms
-  ) %>%
-  ggplot(
-    aes(x = start + duration / 2, width = duration, y = name, fill = d)
-  ) +
-  geom_tile() +
-  scale_fill_viridis_c(guide = "none") +
-  theme_minimal() +
-  labs(title = "Chordogram of 'Crosseyed and Painless'", x = "Time (s)", y = "")
+bowie_all$duration_z <- round((bowie_all$track.duration_ms - mean(bowie_all$track.duration_ms))/sd(bowie_all$track.duration_ms), 2) 
+bowie_all$is_eno2 <- ifelse(bowie_all$is_eno < 1, "No", "Yes")  # above / below avg flag
+bowie_all <- bowie_all[order(bowie_all$duration_z), ]
+bowie_all$track.name <- factor(bowie_all$track.name, levels = bowie_all$track.name)  # convert to factor to retain sorted order in plot.
 
+divbar1 <- ggplot(bowie_all, aes(x=track.name, y=duration_z)) + 
+  geom_bar(stat='identity', aes(fill=is_eno2), width=.5)  +
+  scale_fill_manual(name="Produced by Eno", 
+                    labels = c("Produced by Eno", "Not Produced by Eno"), 
+                    values = c("Yes"="#00ba38", "No"="#f8766d")) + 
+  labs(subtitle="Normalised duration of Bowie's songs", 
+       title= "Bowie's song durations") +
+  theme( 
+    axis.text.y = element_text(vjust=0.2, size=10),
+    axis.ticks.x = element_blank()) +
+  xlab('Song') + ylab('Normalized durations') +
+  coord_flip()
 
-cap1 <- cap %>%
-  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>%
-  ggplot(aes(x = time, y = bpm, fill = power)) +
-  geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
-  labs(title = "Cyclic tempogram of 'Crosseyed and Painless", x = "Time (s)", y = "Tempo (BPM)") +
-  theme_classic()
-```
-```{r}
-cap0
-cap1
-```
+TH_all$duration_z <- round((TH_all$track.duration_ms - mean(TH_all$track.duration_ms))/sd(TH_all$track.duration_ms), 2) 
+TH_all$is_eno2 <- ifelse(TH_all$is_eno < 1, "No", "Yes")  # above / below avg flag
+TH_all <- TH_all[order(TH_all$duration_z), ]
+TH_all$track.name <- factor(TH_all$track.name, levels = TH_all$track.name)  # convert to factor to retain sorted order in plot.
 
+divbar2 <- ggplot(TH_all, aes(x=track.name, y=duration_z)) + 
+  geom_bar(stat='identity', aes(fill=is_eno2), width=.5)  +
+  scale_fill_manual(name="Produced by Eno", 
+                    labels = c("Produced by Eno", "Not Produced by Eno"), 
+                    values = c("Yes"="#00ba38", "No"="#f8766d")) + 
+  labs(subtitle="Normalised duration of TH's songs", 
+       title= "Talking Heads's song durations") + 
+  theme( 
+    axis.text.y = element_text(vjust=0.2, size=10),
+    axis.ticks.x = element_blank()) +
+  xlab('Song') + ylab('Normalized durations') +
+  coord_flip()
 
-***
-
-Here we have a chordogram and tempogram analysis of the song 'Crosseyed and Painless' by Talking Heads. The song is built on repeating patterns and polyrythms and only uses a single chord. The chordogram shows this quite well, note the dark blue bar on the B:min row on the y-axis. The tempogram shows a clear stable rythm throughout the whole song. These two graphs illustrate the usage of repetition, which Talking Heads and Eno used extensively in their 'Remain in Light' album.
-
-The chordogram shows a dark blue bar on the B:min row which is correctly found repeating throughout the whole song. There are a couple of moments in the song where a pause is found. These moments can be recognised by the bright yellow vertical lines: at these moments no chords fit which results in the yellow line we see at around the 50 second mark and around 220 seconds too.
-
------------------------------------------------------------------------
-
-
-### Did Bowie change anything else when switching languages for Heroes? A dynamic time warping analysis.
-```{r}
-
-heroes <-
-  get_tidy_audio_analysis("5Ci3b8pfpLA9Zk17qGXBCF") %>%
-  select(segments) %>%
-  unnest(segments) %>%
-  select(start, duration, pitches)
-
-helden <-
-  get_tidy_audio_analysis("7dCiqEHU97OX7mkRG1Kdjm") %>%
-  select(segments) %>%
-  unnest(segments) %>%
-  select(start, duration, pitches)
-
-compmus_long_distance(
-  heroes %>% mutate(pitches = map(pitches, compmus_normalise, "manhattan")),
-  helden %>% mutate(pitches = map(pitches, compmus_normalise, "manhattan")),
-  feature = pitches,
-  method = "manhattan"
-) %>%
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_equal() +
-  labs(x = "Heroes", y = "Helden") +
-  theme_minimal() +
-  scale_fill_viridis_c(guide = NULL)
-
-```
-
-
-***
-<font size="4em"> Here we see a dynamic time warping analysis of David Bowie's two versions of his song 'Heroes'. On the X-axis 'Heroes' is plotted, while on the Y-axis his German version 'Helden' is plotted. We see a clear correlation between the two, some small discrepancies could be formed due to there being a 3 second change in duration between the two songs. We can see that 'Helden' is a bit longer at the top of the graph! there is no overlap. \n  Since the two versions are found to be so similar, we won't take Bowie's German version into account in future analyses.</font>
-
------------------------------------------------------------------------
-
-### Does Eno affect the average duration of the albums he works on?
-
-```{r, fig.width=20, fig.height=10}
-grid.arrange(divbar1, divbar2, ncol=2)
-```
-
-
-***
-<font size="4em"> As we can see from the graphs the duration is quite evenly distributed over songs produced by and not by Eno, I have chosen to use this diverging barplot because it can show each song individually, while the mean duration of the albums/songs would be influenced too much by tracks like 'Station to Station' and 'Television Man'</font>
-
------------------------------------------------------------------------
-
-### Is Bowie's most danceable album actually 'Let's Dance'?
-
-```{r}
-ggplotly(bowie_lollipop)
-```
-
-***
-<font size="4em"> A little bit of a detour, but after I found out that of all albums in my corpus, Bowie's 'Let's Dance' has the highest mean danceability, I wanted to know how it ranked among all of his work. As we see that of all his albums it ranks at number 4, right after 'Tonight' and the two studio versions of 'Never Let Me'. It turns out the Japanese version of 'Never Let Me' is the grooviest of all, those lucky Japanese!</font>
-
------------------------------------------------------------------------
-
-### Does Eno make songs more sad?
-
-```{r}
+###########
 theme_set(theme_light())
 
 bowieSum <- bowie%>%
@@ -742,7 +635,7 @@ plotTempo <- ggplot(all_sum) + geom_segment(aes(x=1, xend=2, y=`without_eno`, ye
   geom_vline(xintercept=2, linetype="dashed", size=.1) +
   scale_color_manual(labels = c("Up", "Down"), 
                      values = c("green"="#00ba38", "red"="#f8766d")) +
-  labs(x="", y="Mean Tempo") +  # Axis labels
+  labs(x="", y="Mean Tempo (BPM)") +  # Axis labels
   xlim(.5, 2.5) + ylim(105,(1.1*(max(all_sum$`without_eno`, all_sum$`with_eno`))))
 
 plotTempo<- plotTempo+ geom_text(label=left_label, y=all_sum$`without_eno`, x=rep(1, NROW(all_sum)), hjust=1.1, size=4)
@@ -803,11 +696,247 @@ plotEnergy<- plotEnergy+ theme(axis.ticks = element_blank(),
     title = '4. The mean energy of Eno vs. non-Eno produced albums'
   )
 
+
+
+# SSM heroes/helden
+
+heroes <-
+  get_tidy_audio_analysis("5Ci3b8pfpLA9Zk17qGXBCF") %>%
+  select(segments) %>%
+  unnest(segments) %>%
+  select(start, duration, pitches)
+
+helden <-
+  get_tidy_audio_analysis("7dCiqEHU97OX7mkRG1Kdjm") %>%
+  select(segments) %>%
+  unnest(segments) %>%
+  select(start, duration, pitches)
+
+heroes_ssm <- compmus_long_distance(
+  heroes %>% mutate(pitches = map(pitches, compmus_normalise, "manhattan")),
+  helden %>% mutate(pitches = map(pitches, compmus_normalise, "manhattan")),
+  feature = pitches,
+  method = "manhattan"
+) %>%
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_equal() +
+  labs(x = "Heroes", y = "Helden", title = "Dynamic time warping analysis of Helden vs. Heroes") +
+  theme_minimal() +
+  scale_fill_viridis_c(guide = NULL)
+
+### tempocharm and chordogram
+
+
+circshift <- function(v, n) {
+  if (n == 0) v else c(tail(v, n), head(v, -n))
+}
+
+#      C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
+major_chord <-
+  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    0,    0)
+minor_chord <-
+  c(   1,    0,    0,    1,    0,    0,    0,    1,    0,    0,    0,    0)
+seventh_chord <-
+  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    1,    0)
+
+major_key <-
+  c(6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
+minor_key <-
+  c(6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+
+chord_templates <-
+  tribble(
+    ~name, ~template,
+    "Gb:7", circshift(seventh_chord, 6),
+    "Gb:maj", circshift(major_chord, 6),
+    "Bb:min", circshift(minor_chord, 10),
+    "Db:maj", circshift(major_chord, 1),
+    "F:min", circshift(minor_chord, 5),
+    "Ab:7", circshift(seventh_chord, 8),
+    "Ab:maj", circshift(major_chord, 8),
+    "C:min", circshift(minor_chord, 0),
+    "Eb:7", circshift(seventh_chord, 3),
+    "Eb:maj", circshift(major_chord, 3),
+    "G:min", circshift(minor_chord, 7),
+    "Bb:7", circshift(seventh_chord, 10),
+    "Bb:maj", circshift(major_chord, 10),
+    "D:min", circshift(minor_chord, 2),
+    "F:7", circshift(seventh_chord, 5),
+    "F:maj", circshift(major_chord, 5),
+    "A:min", circshift(minor_chord, 9),
+    "C:7", circshift(seventh_chord, 0),
+    "C:maj", circshift(major_chord, 0),
+    "E:min", circshift(minor_chord, 4),
+    "G:7", circshift(seventh_chord, 7),
+    "G:maj", circshift(major_chord, 7),
+    "B:min", circshift(minor_chord, 11),
+    "D:7", circshift(seventh_chord, 2),
+    "D:maj", circshift(major_chord, 2),
+    "F#:min", circshift(minor_chord, 6),
+    "A:7", circshift(seventh_chord, 9),
+    "A:maj", circshift(major_chord, 9),
+    "C#:min", circshift(minor_chord, 1),
+    "E:7", circshift(seventh_chord, 4),
+    "E:maj", circshift(major_chord, 4),
+    "G#:min", circshift(minor_chord, 8),
+    "B:7", circshift(seventh_chord, 11),
+    "B:maj", circshift(major_chord, 11),
+    "D#:min", circshift(minor_chord, 3)
+  )
+
+key_templates <-
+  tribble(
+    ~name, ~template,
+    "Gb:maj", circshift(major_key, 6),
+    "Bb:min", circshift(minor_key, 10),
+    "Db:maj", circshift(major_key, 1),
+    "F:min", circshift(minor_key, 5),
+    "Ab:maj", circshift(major_key, 8),
+    "C:min", circshift(minor_key, 0),
+    "Eb:maj", circshift(major_key, 3),
+    "G:min", circshift(minor_key, 7),
+    "Bb:maj", circshift(major_key, 10),
+    "D:min", circshift(minor_key, 2),
+    "F:maj", circshift(major_key, 5),
+    "A:min", circshift(minor_key, 9),
+    "C:maj", circshift(major_key, 0),
+    "E:min", circshift(minor_key, 4),
+    "G:maj", circshift(major_key, 7),
+    "B:min", circshift(minor_key, 11),
+    "D:maj", circshift(major_key, 2),
+    "F#:min", circshift(minor_key, 6),
+    "A:maj", circshift(major_key, 9),
+    "C#:min", circshift(minor_key, 1),
+    "E:maj", circshift(major_key, 4),
+    "G#:min", circshift(minor_key, 8),
+    "B:maj", circshift(major_key, 11),
+    "D#:min", circshift(minor_key, 3)
+  )
+
+crosseyed <-
+  get_tidy_audio_analysis("0yhwdmbgkKdE1plV8xWdrd") %>%
+  compmus_align(bars, segments) %>%
+  select(bars) %>%
+  unnest(bars) %>%
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "mean", norm = "manhattan"
+      )
+  )
+
+cap0 <- crosseyed %>% 
+  compmus_match_pitch_template(
+    key_templates,         # Change to chord_templates if descired
+    method = "euclidean",  # Try different distance metrics
+    norm = "manhattan"     # Try different norms
+  ) %>%
+  ggplot(
+    aes(x = start + duration / 2, width = duration, y = name, fill = d)
+  ) +
+  geom_tile() +
+  scale_fill_viridis_c(guide = "none") +
+  theme_minimal() +
+  labs(x = "Time (s)", y = "")
+
+
+cap1 <- cap %>%
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>%
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
+
+
 ```
+
+-----------------------------------------------------------------------
+
+
+### The fingerprints of Brian Eno in David Bowie's and The Talking Heads's work; an introduction to the corpus.
+
+
+**<font size="8em"> Introduction </font>**
+<font size="4em"> 
+
+
+When thinking of a popular band or record, we mostly think about the charismatic lead singer, virtuous guitarist or energetic drummer. Overlooked however is often the role of the producer of the band. It is not without reason that George Martin is often called 'the fifth Beatle'. How much influence do producers have on a bands sound? How much does a record producers put their own style into the records they produce? Of course this will vary a lot from producer to producer, but for this Portfolio the work of one producer in particular will be highlighted: Brian Eno. Eno is regarded as one of the best producers in the history of record producers and has produced for names as Talking Heads, Roxy Music and U2. With fellow producer Tony Visconte he helped David Bowie create his famed 'Berlin Trilogy', existing of 'Low', 'Heroes' and 'Lodger', which this Portfolio will analyse and investigate. Next to Bowie's Berlin Trilogy we will look at another trilogy Eno has produced: Talking Heads's 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light'. Can we find notable differences within Eno and non-Eno produced records? Are there correlations between his work with Bowie and Talking Heads?
+
+Setup of this portfolio:
+Firstly, as a warm up, I would like to take you over some features, calculated by  the Spotify API, of the song sin our corpus. These features, as seen in the table underneath, give a value to features like danceability, tempo and energy, to name a few. These plots will show correlations between songs which are produced by Eno against songs which aren't. 
+Secondly, after the fun warm up rounds, we will take a closer look ad individual song properties, like chroma features. These will be used to find aspects of repetition in the Eno-produced records, something he is known for in his other work and ambient records. To finalize I will summarize my findings in the conclusion.
+
+**<font>Albums used in this Corpus:</font>**
+David Bowie's 'Berlin Trilogy' versus other work by Bowie ('Diamond Dogs', 'Hunky Dory', 'Let's Dance', 'Station to Station'). \n
+
+Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light' versus 'Talking Heads 77'', 'Speaking in Tongues' and 'Little Creatures'</font>
+
+
+
+
+```{r}
+tafel <- bowie[0:10, 6:16]
+kbl(tafel, caption = "Some of the features of some of of Bowie's songs, which we will use for further analysis.") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+
+```
+
+***
+Bowie
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/109zncLRngc5ofl1DsCHcE?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+Berlin Trilogy
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/6Rb67d7vVnq1FFAASwy5p5?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+Talking Heads
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/4XrUACEdnQh8WfygAgSKxd?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+Talking Heads with Eno
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1K27mtJcCFQw4IxJLZlmNQ?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+-----------------------------------------------------------------------
+
+### Warm up round: does Eno affect the average duration of the albums he works on?
+
+```{r, fig.width=20, fig.height=10}
+grid.arrange(divbar1, divbar2, ncol=2)
+```
+
+
+***
+<font size="4em"> 
+As first graph i figured to start out with an easy concept; does working with Eno affect your song duration? For David Bowie we can see that his shorter-than-average songs are quite often produced by eno while his longer songs are mostly colored red, hinting at shorter song times when working with Eno. The other plot however does not confirm this, since the amount of Eno-produced songs in the upper register of duration in Talking Head's work is quite comparable with the amount in the lower register. Conclusion: maybe for Bowie yes! But speaking for the whole of the corpus we cannot confirm this.
+
+I have chosen to use this diverging bar plot because it can show each song individually, while the mean duration of the albums/songs would be influenced too much by tracks like 'Station to Station' and 'Who is it?'</font>
+
+-----------------------------------------------------------------------
+
+### Sidetrack: is Bowie's most danceable album actually 'Let's Dance'?
+
+```{r}
+ggplotly(bowie_lollipop)
+```
+
+***
+<font size="4em"> A little bit of a detour, but after I found out that of all albums in my corpus, Bowie's 'Let's Dance' has the highest mean danceability, I wanted to know how it ranked among all of his work. As we see that of all his albums it ranks at number 4, right after 'Tonight' and the two studio versions of 'Never Let Me'. It turns out the Japanese version of 'Never Let Me' is the grooviest of all, those lucky Japanese!</font>
+
+-----------------------------------------------------------------------
+
+### Does Eno make songs more sad?
+
 
 ```{r, fig.width=20, fig.height=10}
 grid.arrange(plotDance, plotValence, plotTempo, plotEnergy, ncol=2)
-
 ```
 
 ***
@@ -818,126 +947,107 @@ In the top left we can see a drop in danceability in the albums which Eno has pr
 What attributes lowers the average danceability and valence if it's not the tempo or the energy?
 </font>
 
+-----------------------------------------------------------------------
 
-### Can we group Eno's work within the corpus? Dendogram analysis
+### Why does the danceability and valence drop if it's not due to the tempo or energy? Eno prefers instrumentalness!
 
 ```{r}
-
-get_conf_mat <- function(fit) {
-  outcome <- .get_tune_outcome_names(fit)
-  fit %>% 
-    collect_predictions() %>% 
-    conf_mat(truth = outcome, estimate = .pred_class)
-}  
-
-get_pr <- function(fit) {
-  fit %>% 
-    conf_mat_resampled() %>% 
-    group_by(Prediction) %>% mutate(precision = Freq / sum(Freq)) %>% 
-    group_by(Truth) %>% mutate(recall = Freq / sum(Freq)) %>% 
-    ungroup() %>% filter(Prediction == Truth) %>% 
-    select(class = Prediction, precision, recall)
-}  
-
-
-bowie_dend <-
-  get_playlist_audio_features("", "2bpiIW4K1BeSRXMNtCmI0M") %>%
-  add_audio_analysis() %>%
-  mutate(
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(segments,
-          compmus_summarise, pitches,
-          method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean"
-      )
-  ) %>%
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) %>%
-  mutate_at(vars(pitches, timbre), map, bind_rows) %>%
-  unnest(cols = c(pitches, timbre))
-
-th_dend <-
-  get_playlist_audio_features("", "6dOw9NxwvrQ7rCwatayV4A") %>%
-  add_audio_analysis() %>%
-  mutate(
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(segments,
-          compmus_summarise, pitches,
-          method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean"
-      )
-  ) %>%
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) %>%
-  mutate_at(vars(pitches, timbre), map, bind_rows) %>%
-  unnest(cols = c(pitches, timbre))
-
-bowie_dend_juice <-
-  recipe(
-    track.name ~
-      danceability +
-      valence +
-      energy,
-    data = bowie_dend
-  ) %>%
-  step_center(all_predictors()) %>%
-  step_scale(all_predictors()) %>% 
-  # step_range(all_predictors()) %>% 
-  prep(bowie_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
-  juice() %>%
-  column_to_rownames("track.name")
-
-th_dend_juice <-
-  recipe(
-    track.name ~
-      danceability +
-      valence +
-      energy,
-    data = th_dend
-  ) %>%
-  step_center(all_predictors()) %>%
-  step_scale(all_predictors()) %>% 
-  # step_range(all_predictors()) %>% 
-  prep(th_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
-  juice() %>%
-  column_to_rownames("track.name")
-
-bowie_dend_dist <- dist(bowie_dend_juice, method = "euclidean")
-
-
-th_dend_dist <- dist(th_dend_juice, method = "euclidean")
-
-dend0 <- bowie_dend_dist %>% 
-  hclust(method = "complete") %>% # Try single, average, and complete.
-  dendro_data() %>%
-  ggdendrogram() + labs(title = "Dendogram of Bowie's corpus")
-
-dend1 <- th_dend_dist %>% 
-  hclust(method = "complete") %>% # Try single, average, and complete.
-  dendro_data() %>%
-  ggdendrogram() + labs(title = "Dendogram of the Talking Heads corpus")
-
+subplot(bowiemap, THmap) %>% layout(annotations = list( list(x = -0.05 , y = 1.00, text = "Bowie", showarrow = F, xref='paper', yref='paper'), list(x = 1.05 , y = 1.00, text = "Talking Heads", showarrow = F, xref='paper', yref='paper')))
 ```
 
+***
+In the correlation heatmaps we can see how different features correlate to one and another. A positive value and red color correspond to a positive correlation value meaning that if one rises the other also rises. On the contrary, a blue color corresponds to a negative correlation, if one rises, the other drops (and the other way around). 
+The 'is_eno' feature takes a binary value 0 or 1, corresponding to a song not produced by Eno and a song produced by Eno, respectively.
+As we can see in the Bowie and Talking Heads heatmaps, Eno indeed has a negative correlation with both danceability and valence, and a positive one with energy and a neutral one with tempo (as shown in the graphs on previous slides)!
+
+We can see in both graphs that is_eno has a positive correlation with instrumentalness. Now, does instrumentalness have a negative correlation with danceability and valence? It does!
+Now to say that we've cracked the code might be a bit far-fetched, but according to these and previous graphs, where Eno goes, instrumentalness follows, and where instrumentalness goes, danceability and valence go the other way!
+-----------------------------------------------------------------------
+
+### Can we group Eno's work within the corpus? A **dendogram** analysis
+
+
+
 ```{r}
-grid.arrange(dend0, dend1, ncol = 2)
+subplot(bowie_heat, TH_heat) %>% layout(title = 'Heatmap dendogram analysis of the whole corpus', annotations = list( list(x = 0.3 , y = 1.00, text = "Bowie", showarrow = F, xref='paper', yref='paper'), list(x = 1.00 , y = 1.00, text = "Talking Heads", showarrow = F, xref='paper', yref='paper')))
 ```
 
 ***
 
-A clustering analysis of all Bowies's and Talking Heads's songs, produced and not pruduced by Eno, clustered by energy, valence and danceability.
+A clustering analysis of all Bowies's and Talking Heads's songs, produced and not produced by Eno, clustered by instrumentalness, energy and loudness, the three features on which Eno has the highest correlation score. 
+As we see the dendogram analyses turn out quite different, however we can see that instrumentalness is clustered in a similar way in the two dendograms, note how the bright yellow can both be found above and below. Now that we've checked out all the Spotify features and correlations I would like to inspect further and turn our scope down to single track-level features. Can song structure tell us anything about Eno's influence?
+
+
+### Did Bowie change anything else when switching languages for Heroes? A **dynamic time warping** analysis.
+
+```{r}
+heroes_ssm
+```
+
+
+***
+<font size="4em"> Here we see a dynamic time warping analysis of David Bowie's two versions of his song 'Heroes'. On the X-axis 'Heroes' is plotted, while on the Y-axis his German version 'Helden' is plotted. We see a clear correlation between the two, some small discrepancies could be formed due to there being a 3 second change in duration between the two songs. We can see that 'Helden' is a bit longer at the top of the graph! \n  Since the two versions are found to be so similar, we won't take Bowie's German version into account in future analyses.
+
+From this analysis we can also see that the song 'Heroes' doesn't really use distinct sections. We see repeating checkerboard pattern consisting of both smaller and bigger patches. We can see that the song is built on four of these bigger patches, each consisting of a number of smaller patches. The four bigger patches all look alike and are the same size, hinting at a repeating song structure throughout the whole. This leads us to the next couple of analyses: can we find more of these repeating aspects in Bowie's and Talking Head's work with Eno?</font>
+
+-----------------------------------------------------------------------
+
+
+### "Eno trance" 1: does Eno's love for repetition and creating an ambiance in his songs come up in his work with Bowie and Talking Heads? A **cepstogram** analysis.
+
+
+```{r cepts, fig.width=30, fig.height=20}
+grid.arrange(cepto0, cepto1, cepto2, cepto3, ncol=2)
+```
+
+***
+Eno, as being one of the, if not the most influential pioneer of so called 'ambient' music, often tries to encapsulate the listener in a musical environment. With the release of 'Ambient 1: Music for airports', released in '78, the genre Ambient was basically formed and cemented. One of the key aspects of ambient music is that the songs do not follow the general verse and chorus structure and are more of a whole uniform piece where one part flows into the other without the listener noticing. With Eno so orbed by this genre during the late 70's, it is quite probable we can link some of his work with Bowie and Talking heads to Ambient music.
+
+Clarification on the plots: First column: Talking Heads, second column: Bowie, first row: without Eno, second row with Eno.
+
+The top two cepstograms show the timbre features in songs that make use of clear sections, we clearly see a pre-chorus in 'New Feeling at the c01 row around the 60 second mark. In 'Ashes to Ashes' we recognize different patterns too and see clear sections in the c01 and c02 rows.
+However, when looking at the bottom row we see a different pattern, namely one ('Heroes') or two ('Fela's Riff') thick stripes. These songs are very much like an ambient song in the sense that they are a whole piece in which no clear sections can be found. Heroes builds off of a repeating guitar backing track on which Bowie's vocal work creates the dynamics of the song, while 'Fela's Riff' is an instrumental song in which repeating and mesmerizing polyrhythms bring you into a trance, very much like Eno's ambient albums. These repeating patterns are found throughout the whole 'Remain in Light' album by Talking Heads.
+
+I have not used the last three tracks on Bowie's 'Heroes' album, 'Sense of Doubt', 'Moss Garden' and 'Neuköln' because they are clearly Ambient songs on which Eno left his mark. The point of interest is to find aspects of ambient music in non-ambient music songs. 
+
+
+### "Eno trance" 2: Another way of showing the repetition in Eno's work: a **chordogram** and **tempogram** of crosseyed and painless
+
+
+```{r, fig.width=30, fig.height=20}
+subplot(cap0, cap1) %>% layout(title = "Further analysis of repetition in 'Crosseyed and painless' by Talking Heads", annotations = list( list(x = 0.15 , y = -0.05, text = "Chordogram", showarrow = F, xref='paper', yref='paper'), list(x = 0.83 , y = -0.05, text = "Cyclic Tempogram", showarrow = F, xref='paper', yref='paper')))
+```
+
+
+***
+
+Here we have a chordogram and tempogram analysis of the song 'Crosseyed and Painless' by Talking Heads. The song is built on repeating patterns and polyrhythms and only uses a single chord. The chordogram shows this quite well, note the dark blue bar on the B:min row on the y-axis. The tempogram shows a clear stable rhythm throughout the whole song. These two graphs illustrate the usage of repetition, which Talking Heads and Eno used extensively in their 'Remain in Light' album.
+
+The chordogram shows a dark blue bar on the B:min row which is correctly found repeating throughout the whole song. There are a couple of moments in the song where a pause is found. These moments can be recognized by the bright yellow vertical lines: at these moments no chords fit which results in the yellow line we see at around the 50 second mark and around 220 seconds too.
+
 
 ### Conclusion/Discussion
-<b><font size="8em"> Conclusion </font></b>
+**<font size="8em"> Conclusion </font>**
 
-To be written!
+As we've explored through many different features we've seen some correlations between working with Eno and features like instrumentalness, danceability and repetition. To say we've found statistically significant evidence that Brian Eno makes songs less danceable, or that when you work with him your songs will show repeating aspects is not the case, then I'd have to do all kinds of fancy calculations showing that the p-value is kept underneath 0.05. However, I did find out that with the corpus I've been working with these things definitely showed up. I of course was biased towards finding repetition, because I know Eno and I know the albums I've worked with, but seeing the results were still very much rewarding due tot the graphs being very clear. It did come to me as a surprise that the instrumentalness tended to rise when Eno was on the record, since his work contains a lot of synthesizers which i wouldn't think would add to this feature. Finding out that instrumentalness has a negative correlation with the features which tended to lower with Eno working on a track was rewarding find. A very cool find is to see that the is_eno feature correlates with the same other features for both his work with Bowie and with Talking Heads, with 7 out of 10 features having a comparable correlation score.
+
+
+
+
+```{r}
+davidbowie<- knitr::include_graphics('/Users/Ruun/Desktop/Uni/Computational Musicology/Portfolio/Images/bowie_and_eno.jpg')
+davidbyrne<- knitr::include_graphics('/Users/Ruun/Desktop/Uni/Computational Musicology/Portfolio/Images/byne_and_eno.jpg')
+```
+
+```{r} 
+davidbowie
+```
+Brian Eno and David Bowie
+
+```{r} 
+davidbyrne
+```
+
+Eno on the controls with Talking Heads's David Byrne playing guitar.
+
+
