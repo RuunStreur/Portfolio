@@ -1037,17 +1037,11 @@ As we've explored through many different features we've seen some correlations b
 ```{r}
 davidbowie<- knitr::include_graphics('/Users/Ruun/Desktop/Uni/Computational Musicology/Portfolio/Images/bowie_and_eno.jpg')
 davidbyrne<- knitr::include_graphics('/Users/Ruun/Desktop/Uni/Computational Musicology/Portfolio/Images/byne_and_eno.jpg')
-```
-
-```{r} 
 davidbowie
-```
-Brian Eno and David Bowie
-
-```{r} 
 davidbyrne
 ```
-
 Eno on the controls with Talking Heads's David Byrne playing guitar.
+
+Brian Eno and David Bowie
 
 
