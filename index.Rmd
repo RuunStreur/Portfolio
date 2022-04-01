@@ -146,7 +146,7 @@ bowie_dend_dist <- dist(bowie_dend_juice, method = "euclidean")
 dend0 <- bowie_dend_dist %>% 
   hclust(method = "complete") %>% # Try single, average, and complete.
   dendro_data() %>%
-  ggdendrogram() + labs(title = "Dendogram of Bowie's corpus") 
+  ggdendrogram()
   
 th_dend <-
   TH_all %>%
@@ -173,7 +173,7 @@ th_dend_juice <-
   recipe(
     track.name ~
       instrumentalness +
-      liveness +
+      loudness +
       energy,
     data = th_dend
   ) %>%
@@ -189,7 +189,7 @@ th_dend_dist <- dist(th_dend_juice, method = "euclidean")
 TH_dend <- th_dend_dist %>% 
   hclust(method = "complete") %>% # Try single, average, and complete.
   dendro_data() %>%
-  ggdendrogram() + labs(title = "Dendogram of the Talking Heads corpus")
+  ggdendrogram()
 
 bowie_heat <- heatmaply(
   bowie_dend_juice,
@@ -470,7 +470,8 @@ bowie_lollipop <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDanc
   theme( 
         axis.text.x = element_text(angle=80, vjust=0.5, size=6),
         axis.ticks.x = element_blank()) +
-  xlab('Albums') + ylab('Mean Danceability')
+  xlab('Albums') + ylab('Mean Danceability') +
+  scale_x_discrete(label=abbreviate)
   
 ############
 
@@ -886,7 +887,7 @@ Talking Heads 'More songs about buildings and food', 'Fear of Music' and 'Remain
 
 
 ```{r}
-tafel <- bowie[0:10, 6:16]
+tafel <- cbind(bowie[0:10, 'track.name'], bowie[0:10, 6:16])
 kbl(tafel, caption = "Some of the features of some of of Bowie's songs, which we will use for further analysis.") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 
 ```
@@ -951,7 +952,7 @@ What attributes lowers the average danceability and valence if it's not the temp
 
 ### Why does the danceability and valence drop if it's not due to the tempo or energy? Eno prefers instrumentalness!
 
-```{r}
+```{r, fig.width=30, figh.height=30}
 subplot(bowiemap, THmap) %>% layout(annotations = list( list(x = -0.05 , y = 1.00, text = "Bowie", showarrow = F, xref='paper', yref='paper'), list(x = 1.05 , y = 1.00, text = "Talking Heads", showarrow = F, xref='paper', yref='paper')))
 ```
 
@@ -964,12 +965,12 @@ We can see in both graphs that is_eno has a positive correlation with instrument
 Now to say that we've cracked the code might be a bit far-fetched, but according to these and previous graphs, where Eno goes, instrumentalness follows, and where instrumentalness goes, danceability and valence go the other way!
 -----------------------------------------------------------------------
 
-### Can we group Eno's work within the corpus? A **dendogram** analysis
+### Can we group Eno's work within the corpus? A **heatmap-dendogram** analysis
 
 
 
 ```{r}
-subplot(bowie_heat, TH_heat) %>% layout(title = 'Heatmap dendogram analysis of the whole corpus', annotations = list( list(x = 0.3 , y = 1.00, text = "Bowie", showarrow = F, xref='paper', yref='paper'), list(x = 1.00 , y = 1.00, text = "Talking Heads", showarrow = F, xref='paper', yref='paper')))
+subplot(bowie_heat, TH_heat) %>% layout(annotations = list( list(x = 0.4 , y = 1.00, text = "Bowie", showarrow = F, xref='paper', yref='paper'), list(x = 1.00 , y = 1.00, text = "Talking Heads", showarrow = F, xref='paper', yref='paper')))
 ```
 
 ***

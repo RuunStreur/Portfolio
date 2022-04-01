@@ -71,7 +71,7 @@ bowie_dend_dist <- dist(bowie_dend_juice, method = "euclidean")
 dend0 <- bowie_dend_dist %>% 
   hclust(method = "complete") %>% # Try single, average, and complete.
   dendro_data() %>%
-  ggdendrogram() + labs(title = "Dendogram of Bowie's corpus") 
+  ggdendrogram() + labs(title = "Dendogram of Bowie's corpus")
   
 th_dend <-
   TH_all %>%
@@ -107,7 +107,7 @@ th_dend_juice <-
   # step_range(all_predictors()) %>% 
   prep(th_dend %>% mutate(track.name = str_trunc(track.name, 20))) %>%
   juice() %>%
-  column_to_rownames("track.name")
+  column_to_rownames("track.name") 
 
 th_dend_dist <- dist(th_dend_juice, method = "euclidean")
 
@@ -120,15 +120,16 @@ bowie_heat <- heatmaply(
   bowie_dend_juice,
   hclustfun = hclust,
   hclust_method = "complete",  # Change for single, average, or complete linkage.
-  dist_method = "euclidean"
+  dist_method = "euclidean",   showticklabels = c(TRUE, FALSE)
 ) 
 
 TH_heat <- heatmaply(
   th_dend_juice,
   hclustfun = hclust,
   hclust_method = "complete",  # Change for single, average, or complete linkage.
-  dist_method = "euclidean"
+  dist_method = "euclidean",   showticklabels = c(TRUE, FALSE)
 )
+TH_heat
+
 
 subplot(bowie_heat, TH_heat)
-subplot(TH_dend, dend0)

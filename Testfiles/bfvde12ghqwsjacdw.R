@@ -96,4 +96,38 @@ compmus_long_distance(
   theme_minimal() +
   scale_fill_viridis_c(guide = NULL)
 
+bowie_discSum <- bowie_disc%>%
+  group_by(track.album.name)%>%
+  summarize(meanDance=mean(danceability), meanVal = mean(valence))
+
+bowie_discplot <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), meanDance, color=track.album.name, fill=track.album.name)) + geom_col() + 
+  theme_light() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(
+    title = "The mean danceability in all of Bowie's albums",
+    x='Album',
+    y= 'Mean danceability'
+  )
+
+bowie_lollipop <- ggplot(bowie_discSum, aes(x=reorder(track.album.name, meanDance), y=meanDance), fill = track.album.name) + theme_light() +
+  geom_point(size=3, aes(color = track.album.name)) + 
+  geom_segment(aes(x=track.album.name, 
+                   xend=track.album.name, 
+                   y=0, 
+                   yend=meanDance
+  )) + 
+  xlab('Albums') + 
+  ylab('Average Danceability') +
+  labs(title="Bowie's biggest swingers", 
+       subtitle="Average Danceability for every bowie album", 
+       caption="source: Spotify API") + 
+  theme( 
+    axis.text.x = element_text(angle=80, vjust=0.5, size=6),
+    axis.ticks.x = element_blank()) +
+  xlab('Albums') + ylab('Mean Danceability')+
+  scale_x_discrete(label=abbreviate)
+
+bowie_lollipop
+
 
