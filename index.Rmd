@@ -872,11 +872,11 @@ cap1 <- cap %>%
 <font size="4em"> 
 
 
-When thinking of a popular band or record, we mostly think about the charismatic lead singer, virtuous guitarist or energetic drummer. Overlooked however is often the role of the producer of the band. It is not without reason that George Martin is often called 'the fifth Beatle'. How much influence do producers have on a bands sound? How much does a record producers put their own style into the records they produce? Of course this will vary a lot from producer to producer, but for this Portfolio the work of one producer in particular will be highlighted: Brian Eno. Eno is regarded as one of the best producers in the history of record producers and has produced for names as Talking Heads, Roxy Music and U2. With fellow producer Tony Visconte he helped David Bowie create his famed 'Berlin Trilogy', existing of 'Low', 'Heroes' and 'Lodger', which this Portfolio will analyse and investigate. Next to Bowie's Berlin Trilogy we will look at another trilogy Eno has produced: Talking Heads's 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light'. Can we find notable differences within Eno and non-Eno produced records? Are there correlations between his work with Bowie and Talking Heads?
+When thinking of a popular band or record, we mostly think about the charismatic lead singer, virtuous guitarist or energetic drummer. Overlooked however is often the role of the producer of the band. It is not without reason that George Martin is often called 'the fifth Beatle'. How much influence do producers have on a bands sound? How much does a record producers put their own style into the records they produce? Of course this will vary a lot from producer to producer, but for this Portfolio the work of one producer in particular will be highlighted: Brian Eno. Eno is regarded as one of the best producers in the history of record producers and has produced for names as Talking Heads, Roxy Music and U2. With fellow producer Tony Visconte he helped David Bowie create his famed 'Berlin Trilogy', consisting of 'Low', 'Heroes' and 'Lodger', which this Portfolio will analyse and investigate. Next to Bowie's Berlin Trilogy we will look at another trilogy Eno has produced: Talking Heads's 'More songs about buildings and food', 'Fear of Music' and 'Remain in Light'. Can we find notable differences between Eno and non-Eno produced records? Are there correlations between his work with Bowie and Talking Heads?
 
 Setup of this portfolio:
-Firstly, as a warm up, I would like to take you over some features, calculated by  the Spotify API, of the song sin our corpus. These features, as seen in the table underneath, give a value to features like danceability, tempo and energy, to name a few. These plots will show correlations between songs which are produced by Eno against songs which aren't. 
-Secondly, after the fun warm up rounds, we will take a closer look ad individual song properties, like chroma features. These will be used to find aspects of repetition in the Eno-produced records, something he is known for in his other work and ambient records. To finalize I will summarize my findings in the conclusion.
+Firstly, as a warm up, I would like to take you over some features, calculated by  the Spotify API, of the songs in our corpus. These features, as seen in the table underneath, give a value to features like danceability, tempo and energy, to name a few. These plots will show correlations between songs which are produced by Eno against songs which aren't. 
+Secondly we will take a closer look at individual song properties, like chroma features. These will be used to find aspects of repetition in the Eno-produced records, something he is known for in his other work and ambient records. To finalize I will summarize my findings in the conclusion.
 
 **<font>Albums used in this Corpus:</font>**
 David Bowie's 'Berlin Trilogy' versus other work by Bowie ('Diamond Dogs', 'Hunky Dory', 'Let's Dance', 'Station to Station'). \n
@@ -916,7 +916,7 @@ grid.arrange(divbar1, divbar2, ncol=2)
 
 ***
 <font size="4em"> 
-As first graph i figured to start out with an easy concept; does working with Eno affect your song duration? For David Bowie we can see that his shorter-than-average songs are quite often produced by eno while his longer songs are mostly colored red, hinting at shorter song times when working with Eno. The other plot however does not confirm this, since the amount of Eno-produced songs in the upper register of duration in Talking Head's work is quite comparable with the amount in the lower register. Conclusion: maybe for Bowie yes! But speaking for the whole of the corpus we cannot confirm this.
+As first graph I figured to start out with an easy concept: does working with Eno affect your song duration? For David Bowie we can see that his shorter-than-average songs are quite often produced by eno while his longer songs are mostly colored red, hinting at shorter song times when working with Eno. The other plot however does not confirm this, since the amount of Eno-produced songs in the upper register of duration in Talking Head's work is quite comparable with the amount in the lower register. Conclusion: maybe for Bowie yes! But speaking for the whole of the corpus we cannot confirm this.
 
 I have chosen to use this diverging bar plot because it can show each song individually, while the mean duration of the albums/songs would be influenced too much by tracks like 'Station to Station' and 'Who is it?'</font>
 
@@ -929,7 +929,13 @@ ggplotly(bowie_lollipop)
 ```
 
 ***
-<font size="4em"> A little bit of a detour, but after I found out that of all albums in my corpus, Bowie's 'Let's Dance' has the highest mean danceability, I wanted to know how it ranked among all of his work. As we see that of all his albums it ranks at number 4, right after 'Tonight' and the two studio versions of 'Never Let Me'. It turns out the Japanese version of 'Never Let Me' is the grooviest of all, those lucky Japanese!</font>
+<font size="4em"> A little bit of a detour, but after I found out that of all albums in my corpus, Bowie's 'Let's Dance' has the highest mean danceability, I wanted to know how it ranked among all of his work. As we see that of all his albums it ranks at number 4, right after 'Tonight' and the two studio versions of 'Never Let Me Down'. It turns out the Japanese version of 'Never Let Me Down' is the grooviest of all, those lucky Japanese!
+
+
+After finding this out I could of course not resist to find the reason for this difference in danceability, and it is probably because the Japanese version contains a japanese vocal version of the outtake "Girls", which the regular version doesn't contain.
+</font>
+
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/2XqvQ2kY4x7S6pyBEzxzRx?utm_source=generator" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
 -----------------------------------------------------------------------
 
@@ -941,9 +947,9 @@ grid.arrange(plotDance, plotValence, plotTempo, plotEnergy, ncol=2)
 ```
 
 ***
-<font size="4em"> After finding out that Let's Dance is, who would've thought, very danceable I wanted to know what applying a whiff of Eno to your production does for the average danceability, and related attributes of your album.\n
+<font size="4em"> After finding out that Let's Dance is, who would've thought, very danceable, I wanted to know what applying a whiff of Eno to your production does for the average danceability, and related attributes of your album. The features I figured would influence the danceability of a track are valence, tempo and energy.\n
 
-In the top left we can see a drop in danceability in the albums which Eno has produced compared to the ones he hasn't. It also turns out that the average valence decreases. Does that mean that the albums on which Eno has worked are slower and contain less energy? No! As we see in graphs 3 and four, the mean Tempo and mean energy do not decrease in Eno's albums, they increase if anything.
+In the top left we can see a drop in danceability in the albums which Eno has produced compared to the ones he hasn't. It also turns out that the average valence decreases. Does that mean that the albums on which Eno has worked are slower and contain less energy? No! As we see in graphs three and four, the mean tempo and mean energy do not decrease in Eno's albums, they increase if anything.
 
 What attributes lowers the average danceability and valence if it's not the tempo or the energy?
 </font>
@@ -957,12 +963,12 @@ subplot(bowiemap, THmap) %>% layout(annotations = list( list(x = -0.05 , y = 1.0
 ```
 
 ***
-In the correlation heatmaps we can see how different features correlate to one and another. A positive value and red color correspond to a positive correlation value meaning that if one rises the other also rises. On the contrary, a blue color corresponds to a negative correlation, if one rises, the other drops (and the other way around). 
+<font size="4em"> In the correlation heatmaps we can see how different features correlate to one and another. A positive value and red color correspond to a positive correlation value meaning that if one rises the other also rises. On the contrary, a blue color corresponds to a negative correlation, if one rises, the other drops (and the other way around). 
 The 'is_eno' feature takes a binary value 0 or 1, corresponding to a song not produced by Eno and a song produced by Eno, respectively.
 As we can see in the Bowie and Talking Heads heatmaps, Eno indeed has a negative correlation with both danceability and valence, and a positive one with energy and a neutral one with tempo (as shown in the graphs on previous slides)!
 
 We can see in both graphs that is_eno has a positive correlation with instrumentalness. Now, does instrumentalness have a negative correlation with danceability and valence? It does!
-Now to say that we've cracked the code might be a bit far-fetched, but according to these and previous graphs, where Eno goes, instrumentalness follows, and where instrumentalness goes, danceability and valence go the other way!
+Now to say that we've cracked the code might be a bit far-fetched, but according to these and previous graphs, where Eno goes, instrumentalness follows, and where instrumentalness goes, danceability and valence go the other way!</font>
 -----------------------------------------------------------------------
 
 ### Can we group Eno's work within the corpus? A **heatmap-dendogram** analysis
@@ -975,8 +981,8 @@ subplot(bowie_heat, TH_heat) %>% layout(annotations = list( list(x = 0.4 , y = 1
 
 ***
 
-A clustering analysis of all Bowies's and Talking Heads's songs, produced and not produced by Eno, clustered by instrumentalness, energy and loudness, the three features on which Eno has the highest correlation score. 
-As we see the dendogram analyses turn out quite different, however we can see that instrumentalness is clustered in a similar way in the two dendograms, note how the bright yellow can both be found above and below. Now that we've checked out all the Spotify features and correlations I would like to inspect further and turn our scope down to single track-level features. Can song structure tell us anything about Eno's influence?
+<font size="4em">A clustering analysis of all Bowies's and Talking Heads's songs, produced and not produced by Eno, clustered by instrumentalness, energy and loudness, the three features on which Eno has the highest correlation score. 
+As we see the dendogram analyses turn out quite different, however we can see that instrumentalness is clustered in a similar way in the two dendograms, note how the bright yellow can both be found above and below. Now that we've checked out all the Spotify features and correlations I would like to inspect further and turn our scope down to single track-level features. Can song structure tell us anything about Eno's influence?</font>
 
 
 ### Did Bowie change anything else when switching languages for Heroes? A **dynamic time warping** analysis.
@@ -1002,12 +1008,12 @@ grid.arrange(cepto0, cepto1, cepto2, cepto3, ncol=2)
 ```
 
 ***
-Eno, as being one of the, if not the most influential pioneer of so called 'ambient' music, often tries to encapsulate the listener in a musical environment. With the release of 'Ambient 1: Music for airports', released in '78, the genre Ambient was basically formed and cemented. One of the key aspects of ambient music is that the songs do not follow the general verse and chorus structure and are more of a whole uniform piece where one part flows into the other without the listener noticing. With Eno so orbed by this genre during the late 70's, it is quite probable we can link some of his work with Bowie and Talking heads to Ambient music.
+<font size="4em">Eno, as being one of the, if not the most influential pioneer of so called 'ambient' music, often tries to encapsulate the listener in a musical environment. With the release of 'Ambient 1: Music for airports', released in '78, the genre Ambient was formed and cemented. One of the key aspects of ambient music is that the songs do not follow the general verse and chorus structure and its songs are more of a whole uniform piece where one 'part' flows into the other smoothly. With Eno so orbed by this genre during the late 70's, we might be able to link some of his work with Bowie and Talking Heads to ambient music.
 
 Clarification on the plots: First column: Talking Heads, second column: Bowie, first row: without Eno, second row with Eno.
 
 The top two cepstograms show the timbre features in songs that make use of clear sections, we clearly see a pre-chorus in 'New Feeling at the c01 row around the 60 second mark. In 'Ashes to Ashes' we recognize different patterns too and see clear sections in the c01 and c02 rows.
-However, when looking at the bottom row we see a different pattern, namely one ('Heroes') or two ('Fela's Riff') thick stripes. These songs are very much like an ambient song in the sense that they are a whole piece in which no clear sections can be found. Heroes builds off of a repeating guitar backing track on which Bowie's vocal work creates the dynamics of the song, while 'Fela's Riff' is an instrumental song in which repeating and mesmerizing polyrhythms bring you into a trance, very much like Eno's ambient albums. These repeating patterns are found throughout the whole 'Remain in Light' album by Talking Heads.
+However, when looking at the bottom row we see a different pattern, namely one ('Heroes') or two ('Fela's Riff') thick stripes. These songs are very much like an ambient song in the sense that they are a whole piece in which no clear sections can be found. Heroes builds off of a repeating guitar backing track on which Bowie's vocal work creates the dynamics of the song, while 'Fela's Riff' is an instrumental song in which repeating and mesmerizing polyrhythms bring you into a trance, very much like Eno's ambient albums. These repeating patterns are found throughout the whole 'Remain in Light' album by Talking Heads.</font>
 
 I have not used the last three tracks on Bowie's 'Heroes' album, 'Sense of Doubt', 'Moss Garden' and 'Neuköln' because they are clearly Ambient songs on which Eno left his mark. The point of interest is to find aspects of ambient music in non-ambient music songs. 
 
@@ -1022,15 +1028,16 @@ subplot(cap0, cap1) %>% layout(title = "Further analysis of repetition in 'Cross
 
 ***
 
-Here we have a chordogram and tempogram analysis of the song 'Crosseyed and Painless' by Talking Heads. The song is built on repeating patterns and polyrhythms and only uses a single chord. The chordogram shows this quite well, note the dark blue bar on the B:min row on the y-axis. The tempogram shows a clear stable rhythm throughout the whole song. These two graphs illustrate the usage of repetition, which Talking Heads and Eno used extensively in their 'Remain in Light' album.
+<font size="4em">Here we have a chordogram and tempogram analysis of the song 'Crosseyed and Painless' by Talking Heads. The song is built on repeating patterns and polyrhythms and only uses a single chord. The chordogram shows this quite well, note the dark blue bar on the B:min row on the y-axis. The tempogram shows a clear stable rhythm throughout the whole song. These two graphs illustrate the usage of repetition, which Talking Heads and Eno used extensively in their 'Remain in Light' album.
 
-The chordogram shows a dark blue bar on the B:min row which is correctly found repeating throughout the whole song. There are a couple of moments in the song where a pause is found. These moments can be recognized by the bright yellow vertical lines: at these moments no chords fit which results in the yellow line we see at around the 50 second mark and around 220 seconds too.
+The chordogram shows a dark blue bar on the B:min row which is correctly found repeating throughout the whole song. There are a couple of moments in the song where a pause is found. These moments can be recognized by the bright yellow vertical lines: at these moments no chords fit which results in the yellow line we see at around the 50 second mark and around 220 seconds too.</font>
 
 
 ### Conclusion/Discussion
 **<font size="8em"> Conclusion </font>**
 
-As we've explored through many different features we've seen some correlations between working with Eno and features like instrumentalness, danceability and repetition. To say we've found statistically significant evidence that Brian Eno makes songs less danceable, or that when you work with him your songs will show repeating aspects is not the case, then I'd have to do all kinds of fancy calculations showing that the p-value is kept underneath 0.05. However, I did find out that with the corpus I've been working with these things definitely showed up. I of course was biased towards finding repetition, because I know Eno and I know the albums I've worked with, but seeing the results were still very much rewarding due tot the graphs being very clear. It did come to me as a surprise that the instrumentalness tended to rise when Eno was on the record, since his work contains a lot of synthesizers which i wouldn't think would add to this feature. Finding out that instrumentalness has a negative correlation with the features which tended to lower with Eno working on a track was rewarding find. A very cool find is to see that the is_eno feature correlates with the same other features for both his work with Bowie and with Talking Heads, with 7 out of 10 features having a comparable correlation score.
+<font size="4em">As we've explored through many different features we've seen some correlations between working with Eno and features like instrumentalness, danceability and repetition. To say we've found statistically significant evidence that Brian Eno makes songs less danceable, or that when you work with him your songs will show repeating aspects I can't say for sure, however, I did find out that with the corpus I've been working with these things definitely showed up. I of course was biased towards finding repetition, because I know Eno and I know the albums I've worked with, but seeing the results was still very much rewarding due tot the graphs being quite clear.
+It did come to me as a surprise that the instrumentalness tended to rise when Eno was on the record, since his work contains a lot of synthesizers which I wouldn't think would add to this feature. Finding out that instrumentalness has a negative correlation with the features which tended to lower with Eno working on a track was nice find. Another very cool find is to see that the is_eno feature correlates with the same other features for both his work with Bowie and with Talking Heads, with 7 out of 10 features having a comparable correlation score!</font>*
 
 
 
