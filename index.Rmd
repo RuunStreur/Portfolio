@@ -976,7 +976,7 @@ subplot(bowie_heat, TH_heat) %>% layout(annotations = list( list(x = 0.4 , y = 1
 ***
 
 A clustering analysis of all Bowies's and Talking Heads's songs, produced and not produced by Eno, clustered by instrumentalness, energy and loudness, the three features on which Eno has the highest correlation score. 
-As we see the dendogram analyses turn out quite different, however we can see that instrumentalness is clustered in a similar way in the two dendograms, note how the bright yellow can both be found above and below. Now that we've checked out all the Spotify features and correlations I would like to inspect further and turn our scope down to single track-level features. Can song structure tell us anything about Eno's influence?
+As we see the dendogram analyses turn out quite different, however we can see that instrumentalness is clustered in a similar way in the two dendograms, note how the bright yellow can both be found above and below. Now that we've checked out all the Spotify features and correlations I would like to inspect further and zoom into chroma, timbre and temporal features. Can song structure tell us anything about Eno's influence?
 
 
 ### Did Bowie change anything else when switching languages for Heroes? A **dynamic time warping** analysis.
