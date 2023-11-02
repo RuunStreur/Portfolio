@@ -31,7 +31,7 @@ library(scales)
 
 
 ```{r}
-# Loading Playlists and songs
+# Loading Playlists and songs!
 bowie <- get_playlist_audio_features("", "109zncLRngc5ofl1DsCHcE")
 bowie_eno <- get_playlist_audio_features("", "6Rb67d7vVnq1FFAASwy5p5")
 TH <- get_playlist_audio_features("", "1K27mtJcCFQw4IxJLZlmNQ")
